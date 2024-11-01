@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import Label, Entry, Button, Toplevel, StringVar, ttk, filedialog, Scrollbar, Canvas, Frame
 from PIL import Image, ImageTk, ImageDraw, ImageFont
+import os
 
 
 class ImageWatermarker:
@@ -14,6 +15,9 @@ class ImageWatermarker:
         self.setup_ui()
         self.center_window(800, 600)
 
+        # Bind mouse wheel event for scrolling
+        self.root.bind_all("<MouseWheel>", self.on_mouse_wheel)
+
     def setup_ui(self):
         # Frame for image and vertical scrollbar
         image_frame = Frame(self.root)
@@ -24,20 +28,15 @@ class ImageWatermarker:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Vertical scrollbar
-        v_scrollbar = Scrollbar(image_frame, orient="vertical", command=self.canvas.yview)
-        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.v_scrollbar = Scrollbar(image_frame, orient="vertical", command=self.canvas.yview)
+        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Horizontal scrollbar placed under the image, outside of the image frame
         h_scrollbar = Scrollbar(self.root, orient="horizontal", command=self.canvas.xview)
         h_scrollbar.pack(fill=tk.X)
 
         # Configure canvas scroll command for both scrollbars
-        self.canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-
-        # Bind mouse wheel to scroll the canvas vertically
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.canvas.bind_all("<Button-4>", self._on_mousewheel)  # Linux-specific
-        self.canvas.bind_all("<Button-5>", self._on_mousewheel)  # Linux-specific
+        self.canvas.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
         # Container for the image
         self.image_container = Frame(self.canvas)
@@ -52,11 +51,13 @@ class ImageWatermarker:
         self.label = Label(self.image_container)
         self.label.pack()
 
-        # Buttons for opening image and adding watermark
+        # Buttons for opening image, adding watermark, and saving
         open_button = Button(self.root, text="Open Image", command=self.open_image, padx=10, pady=5)
         open_button.pack(side=tk.LEFT, padx=(10, 0), pady=(10, 20))
         watermark_button = Button(self.root, text="Add Watermark", command=self.add_watermark_text, padx=10, pady=5)
-        watermark_button.pack(side=tk.LEFT, padx=(10, 20), pady=(10, 20))
+        watermark_button.pack(side=tk.LEFT, padx=(10, 0), pady=(10, 20))
+        save_button = Button(self.root, text="Save", command=self.save_image, padx=10, pady=5)
+        save_button.pack(side=tk.LEFT, padx=(10, 20), pady=(10, 20))
 
     def center_window(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -89,6 +90,9 @@ class ImageWatermarker:
         # Update the scroll region to fit the image exactly
         self.canvas.update_idletasks()  # Ensure canvas is updated
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
+
+        # Save the original image filename for saving later
+        self.original_filename = os.path.basename(image_path)
 
     def resize_image_if_needed(self):
         # Resize the image if it's too large for the screen
@@ -134,8 +138,8 @@ class ImageWatermarker:
 
     def add_watermark(self, text, position, font_size, window):
         # Create a new image with the watermark
-        watermarked_image = self.image.convert("RGBA")
-        watermark_layer = Image.new("RGBA", watermarked_image.size)
+        self.watermarked_image = self.image.convert("RGBA")
+        watermark_layer = Image.new("RGBA", self.watermarked_image.size)
 
         draw = ImageDraw.Draw(watermark_layer)
 
@@ -152,12 +156,12 @@ class ImageWatermarker:
 
         # Determine coordinates based on the position
         positions = {
-            "center": ((watermarked_image.width - text_width) // 2, (watermarked_image.height - text_height) // 2),
+            "center": ((self.watermarked_image.width - text_width) // 2, (self.watermarked_image.height - text_height) // 2),
             "top_left": (padding, padding),
-            "top_right": (watermarked_image.width - text_width - padding, padding),
-            "bottom_left": (padding, watermarked_image.height - text_height - padding),
+            "top_right": (self.watermarked_image.width - text_width - padding, padding),
+            "bottom_left": (padding, self.watermarked_image.height - text_height - padding),
             "bottom_right": (
-            watermarked_image.width - text_width - padding, watermarked_image.height - text_height - padding)
+                self.watermarked_image.width - text_width - padding, self.watermarked_image.height - text_height - padding)
         }
         x, y = positions.get(position, positions["center"])
 
@@ -166,10 +170,10 @@ class ImageWatermarker:
         draw.text((x, y), text, fill=watermark_color, font=font)
 
         # Merge watermark layer with original image
-        watermarked_image = Image.alpha_composite(watermarked_image, watermark_layer)
+        self.watermarked_image = Image.alpha_composite(self.watermarked_image, watermark_layer)
 
         # Convert back to RGB and update the displayed image
-        self.image_tk = ImageTk.PhotoImage(watermarked_image.convert("RGB"))  # Update to RGB before displaying
+        self.image_tk = ImageTk.PhotoImage(self.watermarked_image.convert("RGB"))  # Update to RGB before displaying
         self.label.config(image=self.image_tk)
         self.label.image = self.image_tk
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
@@ -177,22 +181,32 @@ class ImageWatermarker:
         # Close watermark window
         window.destroy()
 
-    def _on_mousewheel(self, event):
-        # Scroll vertically with mouse wheel
-        if event.num == 4 or event.delta > 0:  # Up scroll
-            self.canvas.yview_scroll(-1, "units")
-        elif event.num == 5 or event.delta < 0:  # Down scroll
-            self.canvas.yview_scroll(1, "units")
+    def save_image(self):
+        # Open a file dialog to save the watermarked image
+        if not hasattr(self, 'watermarked_image'):
+            return  # Ensure there's a watermarked image to save
 
-    def center_popup(self, window, width, height):
-        # Center the popup window
-        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (width // 2)
-        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (height // 2)
-        window.geometry(f"{width}x{height}+{x}+{y}")
+        default_filename = f"{os.path.splitext(self.original_filename)[0]}_watermark.png"
+        save_path = filedialog.asksaveasfilename(defaultextension=".png", initialfile=default_filename,
+                                                   filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg;*.jpeg"),
+                                                              ("All files", "*.*")])
+        if save_path:
+            self.watermarked_image.convert("RGB").save(save_path)  # Save as RGB format
+
+    def center_popup(self, popup, width, height):
+        # Center a popup window
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = int((screen_width / 2) - (width / 2))
+        y = int((screen_height / 2) - (height / 2))
+        popup.geometry(f"{width}x{height}+{x}+{y}")
+
+    def on_mouse_wheel(self, event):
+        # Scroll the canvas with the mouse wheel
+        self.canvas.yview_scroll(int(-1 * (event.delta // 120)), "units")
 
 
 # Main application start
 root = tk.Tk()
 app = ImageWatermarker(root)
 root.mainloop()
-
