@@ -51,13 +51,25 @@ class ImageWatermarker:
         self.label = Label(self.image_container)
         self.label.pack()
 
-        # Buttons for opening image, adding watermark, and saving
-        open_button = Button(self.root, text="Open Image", command=self.open_image, padx=10, pady=5)
-        open_button.pack(side=tk.LEFT, padx=(10, 0), pady=(10, 20))
-        watermark_button = Button(self.root, text="Add Watermark", command=self.add_watermark_text, padx=10, pady=5)
-        watermark_button.pack(side=tk.LEFT, padx=(10, 0), pady=(10, 20))
-        save_button = Button(self.root, text="Save", command=self.save_image, padx=10, pady=5)
-        save_button.pack(side=tk.LEFT, padx=(10, 20), pady=(10, 20))
+        # Frame for buttons, packed with fill on the x-axis
+        button_frame = Frame(self.root)
+        button_frame.pack(side=tk.BOTTOM, pady=(10, 20), fill=tk.X)
+
+        # Buttons for opening image, adding watermark, and saving in order
+        button_width = 15  # Fixed width for buttons
+        button_spacing = 5  # Space between buttons
+
+        # Button for saving the image
+        save_button = Button(button_frame, text="Save", command=self.save_image, padx=10, pady=5, width=button_width)
+        save_button.pack(side=tk.RIGHT, padx=(button_spacing, 20))  # Added padding to the right edge
+
+        # Button for adding watermark
+        watermark_button = Button(button_frame, text="Add Watermark", command=self.add_watermark_text, padx=10, pady=5, width=button_width)
+        watermark_button.pack(side=tk.RIGHT, padx=(button_spacing, 0))
+
+        # Button for opening image
+        open_button = Button(button_frame, text="Open Image", command=self.open_image, padx=10, pady=5, width=button_width)
+        open_button.pack(side=tk.RIGHT, padx=(button_spacing, 0))
 
     def center_window(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -182,14 +194,15 @@ class ImageWatermarker:
         window.destroy()
 
     def save_image(self):
-        # Open a file dialog to save the watermarked image
+        # Open file dialog to save the image with a watermark
         if not hasattr(self, 'watermarked_image'):
-            return  # Ensure there's a watermarked image to save
-
-        default_filename = f"{os.path.splitext(self.original_filename)[0]}_watermark.png"
-        save_path = filedialog.asksaveasfilename(defaultextension=".png", initialfile=default_filename,
-                                                   filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg;*.jpeg"),
-                                                              ("All files", "*.*")])
+            tk.messagebox.showerror("Error", "No watermarked image to save.")
+            return
+        default_filename = self.original_filename.replace(".", "_watermark.")
+        save_path = filedialog.asksaveasfilename(defaultextension=".png",
+                                                 initialfile=default_filename,
+                                                 filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg;*.jpeg"),
+                                                            ("All files", "*.*")])
         if save_path:
             self.watermarked_image.convert("RGB").save(save_path)  # Save as RGB format
 
