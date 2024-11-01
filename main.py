@@ -134,8 +134,10 @@ class ImageWatermarker:
 
     def add_watermark(self, text, position, font_size, window):
         # Create a new image with the watermark
-        watermarked_image = self.image.copy()
-        draw = ImageDraw.Draw(watermarked_image)
+        watermarked_image = self.image.convert("RGBA")
+        watermark_layer = Image.new("RGBA", watermarked_image.size)
+
+        draw = ImageDraw.Draw(watermark_layer)
 
         # Load font
         try:
@@ -159,12 +161,15 @@ class ImageWatermarker:
         }
         x, y = positions.get(position, positions["center"])
 
-        # Draw watermark text
-        watermark_color = (255, 255, 255, int(255 * 0.1))
+        # Draw watermark text with transparency
+        watermark_color = (255, 255, 255, 128)  # Set transparency for a more subtle effect
         draw.text((x, y), text, fill=watermark_color, font=font)
 
-        # Update the displayed image
-        self.image_tk = ImageTk.PhotoImage(watermarked_image)
+        # Merge watermark layer with original image
+        watermarked_image = Image.alpha_composite(watermarked_image, watermark_layer)
+
+        # Convert back to RGB and update the displayed image
+        self.image_tk = ImageTk.PhotoImage(watermarked_image.convert("RGB"))  # Update to RGB before displaying
         self.label.config(image=self.image_tk)
         self.label.image = self.image_tk
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
@@ -190,3 +195,4 @@ class ImageWatermarker:
 root = tk.Tk()
 app = ImageWatermarker(root)
 root.mainloop()
+

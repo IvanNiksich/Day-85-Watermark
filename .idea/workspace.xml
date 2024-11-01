@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4dfe474c-adf6-45be-8c42-3b19be3772dc" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Day-85-watermark.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Day-85-watermark.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="4dfe474c-adf6-45be-8c42-3b19be3772dc" name="Changes" comment="Added requirements.txt, open image done, working on watermark.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -86,6 +84,19 @@
       <option name="presentableId" value="Default" />
       <updated>1730469388719</updated>
     </task>
+    <task id="LOCAL-00001" summary="Added requirements.txt, open image done, working on watermark.">
+      <option name="closed" value="true" />
+      <created>1730501184190</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1730501184190</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added requirements.txt, open image done, working on watermark." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added requirements.txt, open image done, working on watermark." />
   </component>
 </project>
