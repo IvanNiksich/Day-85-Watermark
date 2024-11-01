@@ -1,21 +1,33 @@
 import tkinter as tk
-from tkinter import Label, Entry, Button, Toplevel, StringVar, ttk
+from tkinter import Label, Entry, Button, Toplevel, StringVar, ttk, filedialog, Scrollbar, Canvas, Frame
 from PIL import Image, ImageTk, ImageDraw, ImageFont
-
-# Define the path to your image file
-image_path = r"C:\Users\niksi\Downloads\as-ssd-bench kingston 256MD202 SC 31.10.2024 13-40-47 (1).png"
 
 # Create the main window
 root = tk.Tk()
 root.title("Image Viewer")
 
-# Load the image
-image = Image.open(image_path)
-image_tk = ImageTk.PhotoImage(image)
+# Create a frame for the image and scrollbars
+image_frame = Frame(root)
+image_frame.pack(fill=tk.BOTH, expand=True)
 
-# Create a label widget to display the image
-label = Label(root, image=image_tk)
-label.pack(pady=10)  # Add vertical padding around the image
+# Create a canvas for scrolling
+canvas = Canvas(image_frame)
+canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+# Add a vertical scrollbar to the canvas
+v_scrollbar = Scrollbar(image_frame, orient="vertical", command=canvas.yview)
+v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+# Create a frame to hold the image
+image_container = Frame(canvas)
+canvas.create_window((0, 0), window=image_container, anchor="nw")
+
+# Configure scrollbar and canvas
+canvas.configure(yscrollcommand=v_scrollbar.set)
+
+# Initial state with a message
+initial_message = Label(image_container, text="Load an image using the open file button", font=("Arial", 16))
+initial_message.pack(pady=10)  # Add vertical padding around the message
 
 # Center the main window on the screen
 window_width = 800  # Set the desired width for the main window
@@ -25,6 +37,31 @@ screen_height = root.winfo_screenheight()
 x_coordinate = int((screen_width / 2) - (window_width / 2))
 y_coordinate = int((screen_height / 2) - (window_height / 2))
 root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
+# Create a label to display the image
+label = Label(image_container)
+label.pack()  # Pack the label in the image container
+
+
+def open_image():
+    # Open a file dialog to select an image
+    file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif")])
+    if file_path:
+        load_image(file_path)
+
+
+def load_image(image_path):
+    # Load and display the new image
+    global image, image_tk
+    image = Image.open(image_path)
+    image_tk = ImageTk.PhotoImage(image)
+
+    # Update the label with the new image
+    label.config(image=image_tk)
+    label.image = image_tk  # Keep a reference to avoid garbage collection
+
+    # Update the canvas to fit the new image
+    canvas.config(scrollregion=canvas.bbox("all"))
 
 
 def add_watermark_text():
@@ -128,8 +165,8 @@ def add_watermark(watermark_text, position, font_size, window):
         x = watermarked_image.width - text_width - padding
         y = watermarked_image.height - text_height - padding
 
-    # Add the watermark with 20% opacity
-    watermark_color = (255, 255, 255, int(255 * 0.2))  # 20% opacity
+    # Add the watermark with 10% opacity
+    watermark_color = (255, 255, 255, int(255 * 0.1))  # 10% opacity
     draw.text((x, y), watermark_text, fill=watermark_color, font=font)
 
     # Update the displayed image
@@ -137,13 +174,21 @@ def add_watermark(watermark_text, position, font_size, window):
     label.config(image=watermarked_image_tk)
     label.image = watermarked_image_tk  # Keep a reference to avoid garbage collection
 
+    # Update the canvas to fit the new image
+    canvas.config(scrollregion=canvas.bbox("all"))
+
     # Close the watermark entry window
     window.destroy()
 
 
+# Create a button to open a new image file
+open_button = Button(root, text="Open Image", command=open_image, padx=10, pady=5)
+open_button.pack(side=tk.LEFT, padx=(10, 0), pady=(10, 20))  # Add padding
+
 # Create a button to open the watermark text entry window
 button = Button(root, text="Add Watermark", command=add_watermark_text, padx=10, pady=5)
-button.pack(pady=(10, 20))  # Add padding above and below the button
+button.pack(side=tk.LEFT, padx=(10, 20), pady=(10, 20))  # Add padding
 
 # Run the application
 root.mainloop()
+
